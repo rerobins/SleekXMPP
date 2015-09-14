@@ -22,8 +22,7 @@ class Form(ElementBase):
     namespace = 'jabber:x:data'
     name = 'x'
     plugin_attrib = 'form'
-    interfaces = set(('fields', 'instructions', 'items',
-                      'reported', 'title', 'type', 'values'))
+    interfaces = set(('instructions', 'items', 'reported', 'title', 'type', ))
     sub_interfaces = set(('title',))
     form_types = set(('cancel', 'form', 'result', 'submit'))
 
@@ -43,12 +42,12 @@ class Form(ElementBase):
 
     @property
     def field(self):
-        return self['fields']
+        return self.get_fields()
 
     def set_type(self, ftype):
         self._set_attr('type', ftype)
         if ftype == 'submit':
-            fields = self['fields']
+            fields = self.get_fields()
             for var in fields:
                 field = fields[var]
                 del field['type']
@@ -74,7 +73,8 @@ class Form(ElementBase):
             field['desc'] = desc
             field['required'] = required
             if options is not None:
-                field['options'] = options
+                for option in options:
+                    field.add_option(**option)
         else:
             del field['type']
         self.append(field)
@@ -177,7 +177,7 @@ class Form(ElementBase):
 
     def get_values(self):
         values = OrderedDict()
-        fields = self['fields']
+        fields = self.get_fields()
         for var in fields:
             values[var] = fields[var]['value']
         return values
@@ -225,11 +225,11 @@ class Form(ElementBase):
             self.add_reported(var, **field)
 
     def set_values(self, values):
-        fields = self['fields']
+        fields = self.get_fields()
         for field in values:
-            if field not in fields:
+            if field not in self.get_fields():
                 fields[field] = self.add_field(var=field)
-            fields[field]['value'] = values[field]
+            self.get_fields()[field]['value'] = values[field]
 
     def merge(self, other):
         new = copy.copy(self)
